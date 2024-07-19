@@ -1,0 +1,4 @@
+﻿  main.cpp
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(22,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(28,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+  rayrayray.vcxproj -> C:\Users\Rachel\Documents\Graphics\rayrayray\x64\Debug\rayrayray.exe
