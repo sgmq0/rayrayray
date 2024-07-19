@@ -2,12 +2,15 @@
 //
 
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
-}d
+}
 
 void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -31,29 +34,39 @@ unsigned int indices[] = {
     0, 1, 2,
 };
 
-const char* vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
+char* readFileToCharArray(const std::string& filePath) {
+    // Open the file
+    std::ifstream file(filePath, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filePath << std::endl;
+        return nullptr;
+    }
 
-const char* fragmentShaderSource1 = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, 0.0f, 0.0f, 1.0f);\n"
-    "}\0";
+    // Get the size of the file
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
 
-const char* fragmentShaderSource2 = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, 1.0f, 0.0f, 1.0f);\n"
-    "}\0";
+    // Read the file into a string
+    std::vector<char> buffer(size);
+    if (file.read(buffer.data(), size)) {
+        // Allocate memory for the char* array
+        char* shaderCode = new char[size + 1];
+        std::copy(buffer.begin(), buffer.end(), shaderCode);
+        shaderCode[size] = '\0'; // Null-terminate the string
+
+        return shaderCode;
+    }
+    else {
+        std::cerr << "Failed to read file: " << filePath << std::endl;
+        return nullptr;
+    }
+}
 
 int main()
 {
+    const char* vertexShaderSource = readFileToCharArray("vertex.glsl");
+    const char* fragmentShaderSource1 = readFileToCharArray("fragment.glsl");
+    const char* fragmentShaderSource2 = readFileToCharArray("fragment.glsl");
 
     //initialize GLFW
     glfwInit();
@@ -167,12 +180,20 @@ int main()
         glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        float timeValue = glfwGetTime();
+        float greenValue1 = (sin(timeValue) / 2.0f) + 0.5f;
+        float greenValue2 = (sin(timeValue + 3.14) / 2.0f) + 0.5f;
+        int vertexColorLocation1 = glGetUniformLocation(shaderProgram1, "ourColor");
+        int vertexColorLocation2 = glGetUniformLocation(shaderProgram2, "ourColor");
+
         // 4. draw the object
         glUseProgram(shaderProgram1);
+        glUniform4f(vertexColorLocation1, 0.0f, greenValue1, 0.0f, 1.0f);
         glBindVertexArray(VAO1);
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
         glUseProgram(shaderProgram2);
+        glUniform4f(vertexColorLocation2, 0.0f, greenValue2, 0.0f, 1.0f);
         glBindVertexArray(VAO2);
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 

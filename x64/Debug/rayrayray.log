@@ -1,4 +1,7 @@
 ﻿  main.cpp
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(22,1): warning C4305: 'initializing': truncation from 'double' to 'float'
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(28,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(25,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(31,1): warning C4305: 'initializing': truncation from 'double' to 'float'
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(179,25): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(181,27): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   rayrayray.vcxproj -> C:\Users\Rachel\Documents\Graphics\rayrayray\x64\Debug\rayrayray.exe
