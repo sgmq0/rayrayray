@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "Shader.h"
 #include "Camera.h"
@@ -14,31 +15,22 @@
 
 float mixAmt = 0.5f;
 
+int width = 800;
+int height = 800;
+
 // setup camera speed
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
-}
+// setup mouse movement
+float lastX = width / 2;
+float lastY = height / 2;
+float xOffset = 0.0f;
+float yOffset = 0.0f;
 
-void processInput(GLFWwindow* window, Camera* camera) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, true);
-    }
-    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
-        mixAmt = fmin(1.0f, mixAmt + 0.01f);
-    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
-        mixAmt = fmax(0.0f, mixAmt - 0.01f);
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera->pos += camera->cameraSpeed * camera->front;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera->pos -= camera->cameraSpeed * camera->front;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera->pos -= glm::normalize(glm::cross(camera->front, camera->up)) * camera->cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera->pos += glm::normalize(glm::cross(camera->front, camera->up)) * camera->cameraSpeed;
-}
+float fov = 45.0f;
+
+bool firstMouse = true;
 
 float vertices[] = {
     // vertices           // texture coords
@@ -103,10 +95,57 @@ unsigned int indices[] = {
     1, 2, 3
 };
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    xOffset = xpos - lastX;
+    yOffset = lastY - ypos;
+    lastX = xpos;
+    lastY = ypos;
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    fov -= (float)yoffset;
+
+    if (fov > 45.0f) 
+        fov = 45.0f;
+    if (fov < 1.0f)
+        fov = 1.0f;
+}
+
+void processInput(GLFWwindow* window, Camera* camera) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+        mixAmt = fmin(1.0f, mixAmt + 0.01f);
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+        mixAmt = fmax(0.0f, mixAmt - 0.01f);
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera->pos += camera->cameraSpeed * camera->front;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera->pos -= camera->cameraSpeed * camera->front;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera->pos -= glm::normalize(camera->right) * camera->cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera->pos += glm::normalize(camera->right) * camera->cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        camera->pos += camera->cameraSpeed * camera->worldUp;
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+        camera->pos -= camera->cameraSpeed * camera->worldUp;
+}
+
 int main()
 {
-    int width = 800;
-    int height = 800;
 
     //initialize GLFW
     glfwInit();
@@ -230,11 +269,23 @@ int main()
     // create camera
     Camera camera = Camera();
 
+    // capture camera
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+    // set callback for mouse movement
+    glfwSetCursorPosCallback(window, mouse_callback);
+
+    // set callback for scrolling
+    glfwSetScrollCallback(window, scroll_callback);
+
     // to continuously draw the window, create a render loop:
     while (!glfwWindowShouldClose(window)) {
 
         // input
         processInput(window, &camera);
+        camera.processMouseMovement(xOffset, yOffset);
+        xOffset = 0.0f;
+        yOffset = 0.0f;
 
         // rendering commands go here
         glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -261,7 +312,7 @@ int main()
         glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
 
         // create projection matrix
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)width / float(height), 0.1f, 100.0f);
+        glm::mat4 projection = glm::perspective(glm::radians(fov), (float)width / float(height), 0.1f, 100.0f);
         unsigned int projectionLocation = glGetUniformLocation(shader.ID, "projection");
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
