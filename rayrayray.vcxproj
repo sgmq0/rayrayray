@@ -159,6 +159,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />
+    <None Include="post_frag.glsl" />
+    <None Include="post_vert.glsl" />
     <None Include="vertex.glsl" />
   </ItemGroup>
   <ItemGroup>

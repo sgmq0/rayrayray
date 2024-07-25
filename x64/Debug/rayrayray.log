@@ -1,11 +1,11 @@
 ﻿  main.cpp
 C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(26,13): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
 C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(27,13): warning C4244: 'initializing': conversion from 'int' to 'float', possible loss of data
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(105,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(106,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(110,20): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(111,21): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(112,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(113,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(296,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(111,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(112,17): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(116,20): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(117,21): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(118,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(119,13): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Rachel\Documents\Graphics\rayrayray\main.cpp(321,28): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
   rayrayray.vcxproj -> C:\Users\Rachel\Documents\Graphics\rayrayray\x64\Debug\rayrayray.exe

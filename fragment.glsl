@@ -11,4 +11,8 @@ uniform float mixAmt;
 void main()
 {
     FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), mixAmt);
+
+    if (abs(gl_FragCoord.x) < 0.1) {
+        FragColor = vec4(1., 1., 1., 1.);
+    }
 }   

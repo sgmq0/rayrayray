@@ -13,7 +13,7 @@
 #include "Camera.h"
 #include "stb_image.h"
 
-float mixAmt = 0.5f;
+float mixAmt = 0.0f;
 
 int width = 800;
 int height = 800;
@@ -90,9 +90,15 @@ glm::vec3 cubePositions[] = {
     glm::vec3(-1.3f,  1.0f, -1.5f)
 };
 
-unsigned int indices[] = {
-    0, 1, 3,
-    1, 2, 3
+float fbo_vertices[] = {
+    // positions   // texCoords
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    -1.0f, -1.0f,  0.0f, 0.0f,
+    1.0f,  -1.0f,  1.0f, 0.0f,
+
+    -1.0f,  1.0f,  0.0f, 1.0f,
+    1.0f,  -1.0f,  1.0f, 0.0f,
+    1.0f,  1.0f,   1.0f, 1.0f
 };
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -146,6 +152,8 @@ void processInput(GLFWwindow* window, Camera* camera) {
 
 int main()
 {
+    // WINDOW SETUP
+    // ------------------------------------------------------------------------
 
     //initialize GLFW
     glfwInit();
@@ -178,93 +186,102 @@ int main()
     // when a user resizes the window, the viewport should also be adjusted
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    // setup shaders with the shader class
-    const char* vertexPath = "vertex.glsl";
-    const char* fragmentPath = "fragment.glsl";
-    Shader shader = Shader(vertexPath, fragmentPath);
+    // SHADER SETUP
+    // ------------------------------------------------------------------------
 
-    // create VAO and VBO objects and generate buffer ID
-    unsigned int VBO, VAO, EBO;
-    glGenBuffers(1, &EBO);
-
-    glGenBuffers(1, &VBO);
-    glGenVertexArrays(1, &VAO);
-
-    // 1. bind vertex array object
-    glBindVertexArray(VAO);
-
-    // 2. copy our vertices array in a buffer for OpenGL to use
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // 3. set our vertex attribute pointers
-    // position:
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    // texture coordinates:
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // also do the same with the elements
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    // flip the textures when loaded
-    stbi_set_flip_vertically_on_load(true);
-
-    // load the texture images using the stbi_load function
-    int imgWidth, imgHeight, nrChannels;
-    unsigned char* imageData;
-
-    // create texture
-    unsigned int texture1;
-    glGenTextures(1, &texture1);
-    imageData = stbi_load("container.jpg", &imgWidth, &imgHeight, &nrChannels, 0);
-
-    // bind texture
-    glBindTexture(GL_TEXTURE_2D, texture1);
-
-    // set up texture settings
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    // set up the texture filtering method
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    // generate texture and mipmap using previous image data
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    // free image memory
-    stbi_image_free(imageData);
-
-    // do the same for texture 2
-    unsigned int texture2;
-    glGenTextures(1, &texture2);
-    glBindTexture(GL_TEXTURE_2D, texture2);
-    imageData = stbi_load("awesomeface.png", &imgWidth, &imgHeight, &nrChannels, 0);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgWidth, imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    stbi_image_free(imageData);
-
-    // set up shader
+    Shader shader = Shader("vertex.glsl", "fragment.glsl");
     shader.use();
     shader.setInt("texture1", 0);
     shader.setInt("texture2", 1);
 
-    // enable depth testing
-    glEnable(GL_DEPTH_TEST);
+    Shader postProcess = Shader("post_vert.glsl", "post_frag.glsl");
+    postProcess.use();
+    postProcess.setInt("screenTexture", 0);
+
+    // VBO / VAO SETUP
+    // ------------------------------------------------------------------------
+
+    // geometry vbos
+    unsigned int VBO, VAO;
+    glGenBuffers(1, &VBO);
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // whole screen quad vbos
+    unsigned int quadVBO, quadVAO;
+    glGenBuffers(1, &quadVBO);
+    glGenVertexArrays(1, &quadVAO);
+    glBindVertexArray(quadVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(fbo_vertices), fbo_vertices, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // LOAD TEXTURES
+    // ------------------------------------------------------------------------
+
+    int imgWidth, imgHeight, nrChannels;
+    unsigned char* imageData;
+
+    unsigned int texture1;
+    glGenTextures(1, &texture1);
+    imageData = stbi_load("container.jpg", &imgWidth, &imgHeight, &nrChannels, 0);
+    glBindTexture(GL_TEXTURE_2D, texture1);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imgWidth, imgHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(imageData);
+
+    unsigned int texture2;
+    glGenTextures(1, &texture2);
+    glBindTexture(GL_TEXTURE_2D, texture2);
+    imageData = stbi_load("awesomeface.png", &imgWidth, &imgHeight, &nrChannels, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgWidth, imgHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, imageData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(imageData);
+
+    // FRAMEBUFFER SETUP
+    // ------------------------------------------------------------------------
+
+    unsigned int framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    unsigned int textureColorbuffer;
+    glGenTextures(1, &textureColorbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColorbuffer, 0);
+
+    unsigned int RBO;
+    glGenRenderbuffers(1, &RBO);
+    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, RBO);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // SETTINGS + CAMERA
+    // ------------------------------------------------------------------------
 
     // create camera
     Camera camera = Camera();
@@ -272,11 +289,14 @@ int main()
     // capture camera
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-    // set callback for mouse movement
+    // set callbacks
     glfwSetCursorPosCallback(window, mouse_callback);
-
-    // set callback for scrolling
     glfwSetScrollCallback(window, scroll_callback);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    // flip the textures when loaded
+    stbi_set_flip_vertically_on_load(true);
 
     // to continuously draw the window, create a render loop:
     while (!glfwWindowShouldClose(window)) {
@@ -286,6 +306,11 @@ int main()
         camera.processMouseMovement(xOffset, yOffset);
         xOffset = 0.0f;
         yOffset = 0.0f;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glEnable(GL_DEPTH_TEST);
+
+        shader.use();
 
         // rendering commands go here
         glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -321,7 +346,6 @@ int main()
         glBindTexture(GL_TEXTURE_2D, texture1);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, texture2);
-
         glBindVertexArray(VAO);
 
         for (unsigned int i = 0; i < 10; i++) {
@@ -335,6 +359,20 @@ int main()
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
 
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(0);
+
+        // postprocess stuff
+        glDisable(GL_DEPTH_TEST);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0); // back to default
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        
+        postProcess.use();
+        glBindVertexArray(quadVAO);
+        glBindTexture(GL_TEXTURE_2D, textureColorbuffer);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
         // check and call events, and swap the buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -342,7 +380,11 @@ int main()
 
     // deallocate all resources
     glDeleteVertexArrays(1, &VAO);
+    glDeleteVertexArrays(1, &quadVAO);
     glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &quadVBO);
+    glDeleteFramebuffers(1, &framebuffer);
+    glDeleteRenderbuffers(1, &RBO);
 
     // terminate GLFW
     glfwTerminate();
